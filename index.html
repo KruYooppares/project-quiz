@@ -109,16 +109,16 @@
             background: #f5f5f5;
         }
         
-        .btn-danger {
+        .btn-delete {
             background: #dc3545;
             color: white;
-            padding: 8px 12px;
-            font-size: 12px;
+            padding: 6px 10px;
+            font-size: 11px;
             width: auto;
-            margin-left: 5px;
+            margin: 0;
         }
         
-        .btn-danger:hover {
+        .btn-delete:hover {
             background: #c82333;
         }
         
@@ -271,6 +271,12 @@
             background: #f9f9f9;
         }
         
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
         /* Modal */
         .modal {
             display: none;
@@ -301,8 +307,14 @@
         .modal-title {
             font-size: 18px;
             font-weight: 600;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             color: #333;
+        }
+        
+        .modal-subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
         }
         
         .modal-input {
@@ -409,12 +421,13 @@
     <!-- Modal for Delete -->
     <div class="modal" id="deleteModal">
         <div class="modal-content">
-            <div class="modal-title">🔒 ลบข้อมูลทั้งหมด</div>
+            <div class="modal-title">🗑️ ลบข้อมูล</div>
+            <div class="modal-subtitle">ต้องการลบข้อมูลของ: <strong id="deleteNameDisplay"></strong></div>
             <p style="margin-bottom: 20px; color: #666; font-size: 14px;">โปรดใส่รหัสผ่านเพื่อยืนยัน</p>
             <input type="password" class="modal-input" id="passwordInput" placeholder="ระบุรหัสผ่าน">
             <div class="modal-buttons">
                 <button class="button btn-secondary" onclick="closeDeleteModal()">ยกเลิก</button>
-                <button class="button btn-danger" onclick="confirmDelete()">ลบ</button>
+                <button class="button btn-delete" onclick="confirmDelete()" style="width: 100%; background: #dc3545;">ลบ</button>
             </div>
         </div>
     </div>
@@ -429,7 +442,7 @@
             { question: 'บทเรียนอิเล็กทรอนิกส์ (e-Learning)', correctId: 1 },
             { question: 'ซอฟต์แวร์จัดการโครงการ (Project Management)', correctId: 2 },
             { question: 'ระบบสอนภาษาอังกฤษแบบ CAI', correctId: 1 },
-            { question: 'ระบบจัดการทะเบัยนนักเรียน', correctId: 2 },
+            { question: 'ระบบจัดการทะเบียนนักเรียน', correctId: 2 },
             { question: 'โปรแกรมตัดต่อวิดีโอ', correctId: 4 },
             { question: 'แอปพลิเคชัน : หารหนี้หมู่คณะ', correctId: 4 },
             { question: 'เกมตามล่าสมบัติ 2D', correctId: 5 },
@@ -451,6 +464,7 @@
         let userData = {};
         let currentScore = 0;
         let stats = [];
+        let deleteIndex = -1;
         
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -636,7 +650,7 @@
                 container.innerHTML = '<p style="text-align: center; color: #999;">ยังไม่มีข้อมูลสถิติ</p>';
             } else {
                 let html = '<table class="stats-table"><thead><tr>';
-                html += '<th>ชื่อ</th><th>ชั้น</th><th>เลขที่</th><th>คะแนน</th><th></th>';
+                html += '<th>ชื่อ</th><th>ชั้น</th><th>เลขที่</th><th>คะแนน</th><th>ลบ</th>';
                 html += '</tr></thead><tbody>';
                 
                 stats.forEach((s, idx) => {
@@ -646,19 +660,20 @@
                         <td>${s.grade}</td>
                         <td>${s.number}</td>
                         <td style="color: ${color}; font-weight: 600;">${s.score}%</td>
-                        <td></td>
+                        <td><button class="button btn-delete" onclick="openDeleteModal(${idx})">🗑️</button></td>
                     </tr>`;
                 });
                 
                 html += '</tbody></table>';
-                html += '<button class="button btn-danger" onclick="openDeleteModal()" style="margin-top: 20px; width: 100%;">🗑️ ลบข้อมูลทั้งหมด</button>';
                 container.innerHTML = html;
             }
             
             goToPage(4);
         }
         
-        function openDeleteModal() {
+        function openDeleteModal(idx) {
+            deleteIndex = idx;
+            document.getElementById('deleteNameDisplay').textContent = stats[idx].name;
             document.getElementById('deleteModal').classList.add('active');
             document.getElementById('passwordInput').value = '';
             document.getElementById('passwordInput').focus();
@@ -666,17 +681,20 @@
         
         function closeDeleteModal() {
             document.getElementById('deleteModal').classList.remove('active');
+            deleteIndex = -1;
         }
         
         function confirmDelete() {
             const password = document.getElementById('passwordInput').value;
             
             if (password === DELETE_PASSWORD) {
-                stats = [];
-                localStorage.removeItem('matchingStats');
-                alert('✅ ลบข้อมูลทั้งหมดสำเร็จ!');
-                closeDeleteModal();
-                showStats();
+                if (deleteIndex >= 0) {
+                    stats.splice(deleteIndex, 1);
+                    localStorage.setItem('matchingStats', JSON.stringify(stats));
+                    alert('✅ ลบข้อมูลสำเร็จ!');
+                    closeDeleteModal();
+                    showStats();
+                }
             } else {
                 alert('❌ รหัสผ่านไม่ถูกต้อง');
                 document.getElementById('passwordInput').value = '';
@@ -690,7 +708,7 @@
         
         function goToPage(pageNum) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById(`page${pageNum}`).classList.add('active');
+            document.getElementById(`pageNum`).classList.add('active');
             window.scrollTo(0, 0);
         }
         
@@ -700,6 +718,13 @@
             if (event.target === modal) {
                 closeDeleteModal();
             }
+        }
+        
+        // Fix goToPage function
+        function goToPage(pageNum) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(`page${pageNum}`).classList.add('active');
+            window.scrollTo(0, 0);
         }
     </script>
 </body>
