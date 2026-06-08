@@ -109,6 +109,19 @@
             background: #f5f5f5;
         }
         
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            padding: 8px 12px;
+            font-size: 12px;
+            width: auto;
+            margin-left: 5px;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
         .button-group {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -235,20 +248,76 @@
             color: #555;
         }
         
-        .category-grid {
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        .stats-table th {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 2px solid #ddd;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .stats-table td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .stats-table tr:hover {
+            background: #f9f9f9;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .modal-input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .modal-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .category-box {
-            padding: 12px;
-            background: #f0f4ff;
-            border: 1px solid #e0e6ff;
-            border-radius: 6px;
-            font-size: 12px;
-            line-height: 1.4;
         }
     </style>
 </head>
@@ -258,7 +327,7 @@
         <!-- Page 1: Form -->
         <div class="page active" id="page1">
             <h1>🎯 เกมจับคู่โครงงานคอมพิวเตอร์</h1>
-            <p class="subtitle">จับคู่โครงงาน 5 ข้อกับประเภท 5 ประเภท</p>
+            <p class="subtitle">จับคู่โครงงาน 10 ข้อกับประเภท 5 ประเภท</p>
             
             <div class="form-group">
                 <label>ชื่อ-นามสกุล</label>
@@ -299,18 +368,6 @@
                 👤 <span id="displayName"></span> | 📚 ชั้น <span id="displayGrade"></span> เลขที่ <span id="displayNumber"></span>
             </div>
             
-            <p style="text-align: center; margin-bottom: 20px; font-weight: 600; color: #666;">ประเภทโครงงาน 5 ประเภท:</p>
-            
-            <div class="category-grid">
-                <div class="category-box"><strong>1.</strong> โครงงานพัฒนาซ้อของการศึกษา</div>
-                <div class="category-box"><strong>2.</strong> โครงงานพัฒนาเครื่องมือ</div>
-                <div class="category-box"><strong>3.</strong> โครงงานจำลองทฤษฎี</div>
-                <div class="category-box"><strong>4.</strong> โครงงานประสุขเชิยวงาน</div>
-                <div class="category-box"><strong>5.</strong> โครงงานพัฒนาเกม</div>
-            </div>
-            
-            <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
-            
             <div id="questionsContainer"></div>
             
             <div class="button-group">
@@ -327,7 +384,7 @@
             
             <div class="score-box">
                 <div class="score-label">ได้คำตอบถูกต้อง</div>
-                <div class="score-number"><span id="correctCount">0</span>/<span id="totalCount">5</span></div>
+                <div class="score-number"><span id="correctCount">0</span>/<span id="totalCount">10</span></div>
                 <div style="font-size: 36px; font-weight: bold; color: #667eea; margin-top: 10px;"><span id="scorePercent">0</span>%</div>
             </div>
             
@@ -349,27 +406,47 @@
         
     </div>
 
+    <!-- Modal for Delete -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-title">🔒 ลบข้อมูลทั้งหมด</div>
+            <p style="margin-bottom: 20px; color: #666; font-size: 14px;">โปรดใส่รหัสผ่านเพื่อยืนยัน</p>
+            <input type="password" class="modal-input" id="passwordInput" placeholder="ระบุรหัสผ่าน">
+            <div class="modal-buttons">
+                <button class="button btn-secondary" onclick="closeDeleteModal()">ยกเลิก</button>
+                <button class="button btn-danger" onclick="confirmDelete()">ลบ</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Configuration
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxG3sFYKygGNCN4gqxQM5JPjVLuASLG_qP6Bmgs0fG4HNgXh48jxrEkBRnvgrjGNUz4/exec';
+        const DELETE_PASSWORD = 'ProjectM2';
         
-        const QUESTIONS = [
-            { question: 'สร้างเกมที่เล่นบนมือถือหรือคอมพิวเตอร์', correctId: 5 },
-            { question: 'พัฒนาระบบเพื่อวัดและคำนวณค่าต่างๆ', correctId: 2 },
-            { question: 'สร้างโปรแกรมเพื่อใช้ในการเรียนการสอน', correctId: 1 },
-            { question: 'จำลองปรากฏการณ์ทางวิทยาศาสตร์หรือฟิสิกส์', correctId: 3 },
-            { question: 'พัฒนาเครื่องมือช่วยในการวิเคราะห์ข้อมูล', correctId: 4 }
+        const ALL_QUESTIONS = [
+            { question: 'เกม Puzzle ประเภท Match-3', correctId: 5 },
+            { question: 'บทเรียนอิเล็กทรอนิกส์ (e-Learning)', correctId: 1 },
+            { question: 'ซอฟต์แวร์จัดการโครงการ (Project Management)', correctId: 2 },
+            { question: 'ระบบสอนภาษาอังกฤษแบบ CAI', correctId: 1 },
+            { question: 'ระบบจัดการทะเบัยนนักเรียน', correctId: 2 },
+            { question: 'โปรแกรมตัดต่อวิดีโอ', correctId: 4 },
+            { question: 'แอปพลิเคชัน : หารหนี้หมู่คณะ', correctId: 4 },
+            { question: 'เกมตามล่าสมบัติ 2D', correctId: 5 },
+            { question: 'โปรแกรมจำลองการเคลื่อนที่ของวัตถุ', correctId: 3 },
+            { question: 'การจำลองวงจรไฟฟ้า', correctId: 3 }
         ];
         
         const CATEGORIES = [
-            'โครงงานพัฒนาซ้อของการศึกษา',
+            'โครงงานพัฒนาสื่อเพื่อการศึกษา',
             'โครงงานพัฒนาเครื่องมือ',
             'โครงงานจำลองทฤษฎี',
-            'โครงงานประสุขเชิยวงาน',
+            'โครงงานประยุกต์ใช้งาน',
             'โครงงานพัฒนาเกม'
         ];
         
         // State
+        let currentQuestions = [];
         let currentAnswers = {};
         let userData = {};
         let currentScore = 0;
@@ -379,7 +456,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadStats();
             generateNumberSelect();
-            renderQuestions();
         });
         
         function generateNumberSelect() {
@@ -393,10 +469,15 @@
             }
         }
         
+        function shuffleQuestions() {
+            // Shuffle questions
+            currentQuestions = [...ALL_QUESTIONS].sort(() => Math.random() - 0.5);
+        }
+        
         function renderQuestions() {
             const container = document.getElementById('questionsContainer');
             container.innerHTML = '';
-            QUESTIONS.forEach((q, idx) => {
+            currentQuestions.forEach((q, idx) => {
                 const div = document.createElement('div');
                 div.className = 'question';
                 div.innerHTML = `
@@ -411,16 +492,16 @@
                 `;
                 container.appendChild(div);
             });
+            updateSelection();
         }
         
         function selectAnswer(qIdx, catId) {
             currentAnswers[qIdx] = catId;
-            renderQuestions();
             updateSelection();
         }
         
         function updateSelection() {
-            QUESTIONS.forEach((_, idx) => {
+            currentQuestions.forEach((_, idx) => {
                 CATEGORIES.forEach((_, catIdx) => {
                     const btn = document.getElementById(`ans_${idx}_${catIdx + 1}`);
                     if (btn) {
@@ -449,6 +530,9 @@
             };
             
             currentAnswers = {};
+            shuffleQuestions();
+            renderQuestions();
+            
             document.getElementById('displayName').textContent = name;
             document.getElementById('displayGrade').textContent = userData.grade;
             document.getElementById('displayNumber').textContent = userData.number;
@@ -458,10 +542,10 @@
         
         function submitQuiz() {
             const correctCount = Object.keys(currentAnswers).filter(idx => 
-                currentAnswers[idx] === QUESTIONS[idx].correctId
+                currentAnswers[idx] === currentQuestions[idx].correctId
             ).length;
             
-            currentScore = Math.round((correctCount / QUESTIONS.length) * 100);
+            currentScore = Math.round((correctCount / currentQuestions.length) * 100);
             
             // Save to local stats
             const record = {
@@ -478,7 +562,7 @@
             document.getElementById('resultTitle').textContent = passed ? 'ยินดีด้วย!' : 'ลองใหม่นะ!';
             document.getElementById('resultMessage').textContent = passed ? 'คุณทำได้ดีมาก 👏' : 'คุณเก่งแล้ว เรียนรู้เพิ่มเติมแล้วลองใหม่นะ';
             document.getElementById('correctCount').textContent = correctCount;
-            document.getElementById('totalCount').textContent = QUESTIONS.length;
+            document.getElementById('totalCount').textContent = currentQuestions.length;
             document.getElementById('scorePercent').textContent = currentScore;
             
             if (passed) {
@@ -499,7 +583,7 @@
             btn.disabled = true;
             
             const correctCount = Object.keys(currentAnswers).filter(idx => 
-                currentAnswers[idx] === QUESTIONS[idx].correctId
+                currentAnswers[idx] === currentQuestions[idx].correctId
             ).length;
             
             const data = {
@@ -508,7 +592,7 @@
                 number: userData.number,
                 score: currentScore,
                 correctCount: correctCount,
-                totalQuestions: QUESTIONS.length
+                totalQuestions: currentQuestions.length
             };
             
             let retries = 0;
@@ -551,24 +635,52 @@
             if (stats.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #999;">ยังไม่มีข้อมูลสถิติ</p>';
             } else {
-                let html = '<table style="width: 100%; border-collapse: collapse; font-size: 13px;">';
-                html += '<tr style="border-bottom: 2px solid #ddd;"><th style="padding: 10px; text-align: left;">ชื่อ</th><th style="padding: 10px;">ชั้น</th><th style="padding: 10px;">เลขที่</th><th style="padding: 10px;">คะแนน</th></tr>';
+                let html = '<table class="stats-table"><thead><tr>';
+                html += '<th>ชื่อ</th><th>ชั้น</th><th>เลขที่</th><th>คะแนน</th><th></th>';
+                html += '</tr></thead><tbody>';
                 
-                stats.forEach(s => {
+                stats.forEach((s, idx) => {
                     const color = s.score >= 70 ? '#28a745' : '#ffc107';
-                    html += `<tr style="border-bottom: 1px solid #eee;">
-                        <td style="padding: 10px;">${s.name}</td>
-                        <td style="padding: 10px; text-align: center;">${s.grade}</td>
-                        <td style="padding: 10px; text-align: center;">${s.number}</td>
-                        <td style="padding: 10px; text-align: center; color: ${color}; font-weight: 600;">${s.score}%</td>
+                    html += `<tr>
+                        <td>${s.name}</td>
+                        <td>${s.grade}</td>
+                        <td>${s.number}</td>
+                        <td style="color: ${color}; font-weight: 600;">${s.score}%</td>
+                        <td></td>
                     </tr>`;
                 });
                 
-                html += '</table>';
+                html += '</tbody></table>';
+                html += '<button class="button btn-danger" onclick="openDeleteModal()" style="margin-top: 20px; width: 100%;">🗑️ ลบข้อมูลทั้งหมด</button>';
                 container.innerHTML = html;
             }
             
             goToPage(4);
+        }
+        
+        function openDeleteModal() {
+            document.getElementById('deleteModal').classList.add('active');
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('passwordInput').focus();
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+        }
+        
+        function confirmDelete() {
+            const password = document.getElementById('passwordInput').value;
+            
+            if (password === DELETE_PASSWORD) {
+                stats = [];
+                localStorage.removeItem('matchingStats');
+                alert('✅ ลบข้อมูลทั้งหมดสำเร็จ!');
+                closeDeleteModal();
+                showStats();
+            } else {
+                alert('❌ รหัสผ่านไม่ถูกต้อง');
+                document.getElementById('passwordInput').value = '';
+            }
         }
         
         function loadStats() {
@@ -580,6 +692,14 @@
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.getElementById(`page${pageNum}`).classList.add('active');
             window.scrollTo(0, 0);
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('deleteModal');
+            if (event.target === modal) {
+                closeDeleteModal();
+            }
         }
     </script>
 </body>
